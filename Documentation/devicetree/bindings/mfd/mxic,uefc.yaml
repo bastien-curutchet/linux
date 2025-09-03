@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mfd/mxic,uefc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Macronix UEFC (Unified Extensible Flash Controller)
+
+maintainers:
+  - Todo <todo@gmail.com>
+
+description: |
+  todo
+
+properties:
+  compatible:
+    enum:
+      - mxic,uefc
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 2
+
+  interrupt-names:
+    items:
+      - const: error
+      - const: status
+
+  reset-gpios:
+    maxItems: 1
+    description: GPIO connected the active-low reset
+
+  clocks:
+    minItems: 6
+    maxItems: 6
+
+  clock-names:
+    items:
+      - const: sys
+      - const: ss
+      - const: tx_a
+      - const: rx_a
+      - const: tx_b
+      - const: rx_b
+
+  "#address-cells":
+    enum: [0, 1]
+
+  "#size-cells":
+    const: 0
+
+patternProperties:
+  "^nand-controller":
+    type: object
+    $ref: /schemas/mtd/mxic,uefc-nand.yaml#
+
+  "^mmc":
+    type: object
+    $ref: /schemas/mmc/mxic,uefc-mmc.yaml#
+
+  "^spi":
+    type: object
+    $ref: /schemas/spi/mxic,uefc-xspi.yaml#
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - "#address-cells"
+  - "#size-cells"
+
+additionalProperties: false
+
+examples:
+  - |
+
+    amba {
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      uefc: uefc@43a00000 {
+        compatible = "mxic,uefc";
+        reg = <0x43a00000 0x1000>;
+        clocks = <&clk_sys>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>;
+        clock-names = "sys", "ss", "tx_a", "rx_a", "tx_b", "rx_b";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        nand-controller@0 {
+          compatible = "mxic,uefc-nand";
+          #address-cells = <1>;
+          #size-cells = <0>;
+          reg = <0>;
+        };
+
+        spi@1 {
+          compatible = "mxic,uefc-xspi";
+          #address-cells = <1>;
+          #size-cells = <0>;
+          reg = <1>;
+        };
+      };
+    };
+...
