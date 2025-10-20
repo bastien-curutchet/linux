@@ -1161,6 +1161,7 @@ const struct ksz_chip_data ksz_switch_chips[] = {
 		.supports_mii = {false, false, true},
 		.supports_rmii = {false, false, true},
 		.internal_phy = {true, true, false},
+		.num_gpios = 12,
 	},
 
 	[KSZ8563] = {
@@ -1194,6 +1195,7 @@ const struct ksz_chip_data ksz_switch_chips[] = {
 		.ptp_capable = true,
 		.wr_table = &ksz8563_register_set,
 		.rd_table = &ksz8563_register_set,
+		.num_gpios = 3,
 	},
 
 	[KSZ8795] = {
