@@ -1221,6 +1221,13 @@ config SPI_TOPCLIFF_PCH
 	  This driver also supports the ML7213/ML7223/ML7831, a companion chip
 	  for the Atom E6xx series and compatible with the Intel EG20T PCH.
 
+config SPI_UEFC
+	tristate "UEFC SPI Controller"
+	depends on (MFD_MACRONIX_UEFC || COMPILE_TEST) && OF
+	depends on HAS_IOMEM
+	help
+	  Enable UEFC SPI Controller support
+
 config SPI_UNIPHIER
 	tristate "Socionext UniPhier SPI Controller"
 	depends on (ARCH_UNIPHIER || COMPILE_TEST) && OF
