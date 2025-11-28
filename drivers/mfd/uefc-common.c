@@ -4,6 +4,8 @@
 #include <linux/gpio/consumer.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/uefc-common.h>
+#include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
@@ -294,6 +296,21 @@ void uefc_release_channel(struct uefc_common *uefc, struct uefc_channel *chan)
 }
 EXPORT_SYMBOL_GPL(uefc_release_channel);
 
+static irqreturn_t uefc_status_handler(int irq, void *dev_id)
+{
+	pr_info("%s - %d \n", __func__, irq);
+
+	return IRQ_NONE;
+}
+
+static irqreturn_t uefc_error_handler(int irq, void *dev_id)
+{
+
+	pr_info("%s - %d \n", __func__, irq);
+
+	return IRQ_NONE;
+}
+
 static int uefc_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -323,10 +340,22 @@ static int uefc_probe(struct platform_device *pdev)
 	irq_status = platform_get_irq_byname_optional(pdev, "status");
 	if (irq_status < 0 && irq_status != -ENXIO)
 		return dev_err_probe(dev, irq_status, "Failed to get status IRQ");
+	if (irq_status > 0) {
+		ret = devm_request_threaded_irq(dev, irq_status,  NULL, uefc_status_handler,
+						IRQF_ONESHOT | IRQF_SHARED, dev_name(dev), uefc);
+		if (ret)
+			return dev_err_probe(dev, ret, "Failed to setup IRQ status handler");
+	}
 
 	irq_err = platform_get_irq_byname_optional(pdev, "error");
 	if (irq_err < 0 && irq_err != -ENXIO)
 		return dev_err_probe(dev, irq_err, "Failed to get error IRQ");
+	if (irq_err > 0) {
+		ret = devm_request_threaded_irq(dev, irq_err,  NULL, uefc_error_handler,
+						IRQF_ONESHOT | IRQF_SHARED, dev_name(dev), uefc);
+		if (ret)
+			return dev_err_probe(dev, ret, "Failed to setup IRQ error handler");
+	}
 
 	uefc->sys_clk = devm_clk_get(dev, "sys");
 	if (IS_ERR(uefc->sys_clk))
