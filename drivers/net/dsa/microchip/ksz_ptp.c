@@ -183,17 +183,11 @@ static int ksz_ptp_configure_perout(struct ksz_device *dev,
 	return 0;
 }
 
-static int ksz_ptp_enable_perout(struct ksz_device *dev,
-				 struct ptp_perout_request const *request,
-				 int on)
+static int ksz_ptp_get_pin(struct ksz_device *dev,
+			   struct ptp_perout_request const *request)
 {
 	struct ksz_ptp_data *ptp_data = &dev->ptp_data;
-	u64 req_pulse_width_ns;
-	u64 cycle_width_ns;
-	u64 pulse_width_ns;
-	int pin = 0;
-	u32 data32;
-	int ret;
+	int pin;
 
 	if (request->flags & ~PTP_PEROUT_DUTY_CYCLE)
 		return -EOPNOTSUPP;
@@ -206,10 +200,30 @@ static int ksz_ptp_enable_perout(struct ksz_device *dev,
 	if (pin < 0)
 		return -EINVAL;
 
+	return pin;
+}
+
+static int ksz_ptp_enable_perout(struct ksz_device *dev,
+				 struct ptp_perout_request const *request,
+				 int on)
+{
+	struct ksz_ptp_data *ptp_data = &dev->ptp_data;
+	u64 req_pulse_width_ns;
+	u64 cycle_width_ns;
+	u64 pulse_width_ns;
+	int pin = 0;
+	u32 data32;
+	int ret;
+
+	pin = ksz_ptp_get_pin(dev, request);
+	if (pin < 0)
+		return pin;
+
 	data32 = FIELD_PREP(PTP_GPIO_INDEX, pin) |
 		 FIELD_PREP(PTP_TOU_INDEX, request->index);
 	ret = ksz_rmw32(dev, REG_PTP_UNIT_INDEX__4,
 			PTP_GPIO_INDEX | PTP_TOU_INDEX, data32);
+
 	if (ret)
 		return ret;
 
