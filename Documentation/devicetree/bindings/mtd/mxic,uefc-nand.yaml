@@ -7,7 +7,11 @@ $schema: http://devicetree.org/meta-schemas/core.yaml#
 title: Macronix UEFC NAND controller
 
 maintainers:
-  - Toto <toto@gmail.com>
+  - Cheng Ming Lin <linchengming884@gmail.com>
+
+description: |
+  The NAND sub-node of the Macronix UEFC drives a raw NAND channel of the host
+  controller. See mxic,uefc.yaml for the parent device.
 
 allOf:
   - $ref: nand-controller.yaml
@@ -40,7 +44,7 @@ examples:
       uefc: uefc@43a00000 {
         compatible = "mxic,uefc";
         reg = <0x43a00000 0x1000>;
-        clocks = <&clk_sys>, <&clk_ss>, <0>, <0>, <&clk_ss>, <&clk_ss>;
+        clocks = <&clk_sys>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>;
         clock-names = "sys", "ss", "tx_a", "rx_a", "tx_b", "rx_b";
         #address-cells = <1>;
         #size-cells = <0>;

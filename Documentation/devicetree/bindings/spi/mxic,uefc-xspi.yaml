@@ -7,7 +7,11 @@ $schema: http://devicetree.org/meta-schemas/core.yaml#
 title: Macronix UEFC xSPI interface
 
 maintainers:
-  - Todo <todo@gmail.com>
+  - Cheng Ming Lin <linchengming884@gmail.com>
+
+description: |
+  The xSPI sub-node of the Macronix UEFC drives a SPI/OctaSPI memory channel of
+  the host controller. See mxic,uefc.yaml for the parent device.
 
 allOf:
   - $ref: spi-controller.yaml#
