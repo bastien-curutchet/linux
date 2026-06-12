@@ -7,10 +7,13 @@ $schema: http://devicetree.org/meta-schemas/core.yaml#
 title: Macronix UEFC (Unified Extensible Flash Controller)
 
 maintainers:
-  - Todo <todo@gmail.com>
+  - Cheng Ming Lin <linchengming884@gmail.com>
 
 description: |
-  todo
+  The Macronix Unified Extensible Flash Controller (UEFC) is a multi-protocol
+  flash host controller. It is exposed as an MFD whose child devices implement
+  the per-channel protocols (xSPI, raw NAND or eMMC), all sharing the host
+  controller register block and a pair of channels (A and B).
 
 properties:
   compatible:
