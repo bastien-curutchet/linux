@@ -24,6 +24,14 @@ properties:
     description: UEFC channel used
     enum: [0, 1]
 
+  vcc-gpios:
+    description: Optional GPIO controlling the card power (VCC) supply
+    maxItems: 1
+
+  vccq-gpios:
+    description: Optional GPIO controlling the card I/O (VCCQ) supply
+    maxItems: 1
+
 required:
   - compatible
   - reg
@@ -40,7 +48,7 @@ examples:
       uefc: uefc@43a00000 {
         compatible = "mxic,uefc";
         reg = <0x43a00000 0x1000>;
-        clocks = <&clk_sys>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <0>, <0>;
+        clocks = <&clk_sys>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>;
         clock-names = "sys", "ss", "tx_a", "rx_a", "tx_b", "rx_b";
         #address-cells = <1>;
         #size-cells = <0>;
