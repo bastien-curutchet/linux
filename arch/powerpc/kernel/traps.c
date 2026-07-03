@@ -724,8 +724,21 @@ int machine_check_e500(struct pt_regs *regs)
 
 	if (reason & MCSR_MCP)
 		pr_cont("Machine Check Signal\n");
-	if (reason & MCSR_ICPERR)
+	if (reason & MCSR_ICPERR) {
 		pr_cont("Instruction Cache Parity Error\n");
+
+		/*
+		 * This is recoverable by invalidating the I-Cache.
+		 * The I-cache flash invalidate clears all lines;
+		 * correct instructions will be re-fetched from memory.
+		 */
+		mtspr(SPRN_L1CSR1, mfspr(SPRN_L1CSR1) | L1CSR1_ICFI);
+		while (mfspr(SPRN_L1CSR1) & L1CSR1_ICFI)
+			;
+
+		return 1;
+	}
+
 	if (reason & MCSR_DCP_PERR)
 		pr_cont("Data Cache Push Parity Error\n");
 	if (reason & MCSR_DCPERR)
