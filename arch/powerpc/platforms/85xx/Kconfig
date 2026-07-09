@@ -265,5 +265,21 @@ config CORENET_GENERIC
 
 endif # FSL_SOC_BOOKE
 
+config PPC_ICACHE_PARITY_TEST
+	tristate "L1 I-cache parity error injection and recovery test"
+	depends on PPC_E500 && DEBUG_FS
+	help
+	  This option enables a test module that validates the kernel's
+	  ability to recover from L1 instruction cache parity errors on
+	  e500v2 cores (e.g. P2020).
+
+	  The module provides a debugfs interface at:
+	    /sys/kernel/debug/powerpc/icache_parity_test
+
+	  Writing to this file triggers an I-cache parity error injection
+	  and verifies that the machine check handler recovers correctly.
+
+	  If unsure, say N.
+
 config TQM85xx
 	bool

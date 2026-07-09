@@ -476,6 +476,7 @@
 #define L1CSR0_DCE	0x00000001	/* Data Cache Enable */
 
 /* Bit definitions for L1CSR1. */
+#define L1CSR1_ICPI	0x00008000	/* Instruction Cache Parity Inject */
 #define L1CSR1_CPE	0x00010000	/* Instruction Cache Parity Enable */
 #define L1CSR1_ICLFR	0x00000100	/* Instr Cache Lock Bits Flash Reset */
 #define L1CSR1_ICFI	0x00000002	/* Instr Cache Flash Invalidate */
