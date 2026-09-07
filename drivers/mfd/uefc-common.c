@@ -33,9 +33,10 @@
 #define HC_CTRL_CH_SEL_B		BIT(11)
 #define HC_CTRL_CH_SEL_A		0
 #define HC_CTRL_LUN_SEL(x)		(((x) & 0x7) << 8) //NAND
-#define HC_CTRL_PORT_SEL(x)		(((x) & 0xFF) << 0)
+#define HC_CTRL_PORT_SEL(x)		((x) & 0xFF)
+#define HC_CTRL_PORT_SEL_MASK		0xFF
 #define HC_CTRL_PORT_SEL_0		0
-#define HC_CTRL_PORT_CH_MASK		(HC_CTRL_CH_SEL | HC_CTRL_PORT_SEL(0xff))
+#define HC_CTRL_PORT_CH_MASK		(HC_CTRL_CH_SEL | HC_CTRL_PORT_SEL_MASK)
 #define HC_CTRL_PORT_0_CH_B		(HC_CTRL_PORT_SEL_0 | HC_CTRL_CH_SEL_B)
 #define HC_CTRL_PORT_0_CH_A		(HC_CTRL_PORT_SEL_0 | HC_CTRL_CH_SEL_A)
 
@@ -50,7 +51,7 @@
 #define INT_STS_DMA_INT			BIT(6)
 #define INT_STS_BUF_RD_RDY		BIT(5)
 #define INT_STS_BUF_WR_RDY		BIT(4)
-#define INT_STS_ALL_CLR		(INT_STS_AC_RDY | \
+#define INT_STS_ALL_CLR			(INT_STS_AC_RDY | \
 					INT_STS_ERR_INT | \
 					INT_STS_DMA_TFR_CMPLT | \
 					INT_STS_DMA_INT)
@@ -83,7 +84,7 @@
 #define INT_STS_EN_AC_RDY		BIT(28)
 #define INT_STS_EN_ERR_INT		BIT(15)
 #define INT_STS_EN_DMA_TFR_CMPLT	BIT(7)
-#define INT_STS_DMA					BIT(6)
+#define INT_STS_DMA			BIT(6)
 #define INT_STS_EN_BUF_RD_RDY		BIT(5)
 #define INT_STS_EN_BUF_WR_RDY		BIT(4)
 #define INT_STS_EN_DMA_INT		BIT(3)
@@ -176,13 +177,13 @@
 /* share with MAPRD, MAPWR */
 	#define OP_DMY_CNT(x)		(((x) & 0x3F) << 21)
 	#define OP_ADDR_CNT(x)		(((x) & 0x7) << 18)
-	#define OP_CMD_CNT(x)		(((x) - 1) << 17)
+	#define OP_CMD_CNT(x)		(((x) >> 1) << 17)
 	#define OP_DATA_BUSW(x)		(((x) & 0x3) << 14)
 	#define OP_DATA_DTR(x)		(((x) & 0x1) << 16)
 	#define OP_ADDR_BUSW(x)		(((x) & 0x3) << 11)
 	#define OP_ADDR_DTR(x)		(((x) & 0x1) << 13)
 	#define OP_CMD_BUSW(x)		(((x) & 0x3) << 8)
-	#define OP_CMD_DTR(x)		(((x) & 1) << 10)
+	#define OP_CMD_DTR(x)		(((x) & 0x1) << 10)
 	#define OP_DD_RD		BIT(4)
 
 /* Transfer Control Register */
@@ -213,23 +214,18 @@
 
 /* SDMA Transfer Count Register */
 #define SDMA_CNT			0x28
-#define SDMA_CNT_TFR_BYTE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* SDMA System Address Register */
 #define SDMA_ADDR			0x2C
-#define SDMA_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* ADMA2 System Address Register */
 #define ADMA2_ADDR			0x30
-#define ADMA2_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* ADMA3 Integrated Descriptor Address Register */
 #define ADMA3_ADDR			0x34
-#define ADMA3_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Mapping Base Address Register */
 #define BASE_MAP_ADDR			0x38
-#define BASE_MAP_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Software Reset Register */
 #define SW_RST				0x44
@@ -246,7 +242,10 @@
 #define CLK_CTRL			0x4C
 #define CLK_CTRL_SLOW_CLOCK		BIT(31)
 #define CLK_CTRL_RX_SS_B(x)		(((x) & 0x1F) << 21)
+#define CLK_CTRL_RX_SS_B_MASK		CLK_CTRL_RX_SS_B(0x1F)
 #define CLK_CTRL_RX_SS_A(x)		(((x) & 0x1F) << 16)
+#define CLK_CTRL_RX_SS_A_MASK		CLK_CTRL_RX_SS_A(0x1F)
+#define CLK_CTRL_RX_SS_MAX		32
 #define CLK_CTRL_PLL_SELECT(x)		(((x) & 0xFFFF) << 0)
 
 /* Cache Control Register */
@@ -278,11 +277,16 @@
 
 /* Host Controller Version Register */
 #define HC_VER				0x5C
-#define HC_VER_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
+#define HC_VER_CHAN_PROTO_MASK		0x3
+#define HC_VER_CHAN_PROTO_XSPI		0x1
+#define HC_VER_CHAN_PROTO_ONFI		0x2
+#define HC_VER_CHAN_PROTO_EMMC		0x3
+#define HC_VER_CHAN_A_SHIFT		4
+#define HC_VER_CHAN_B_SHIFT		9
+#define HC_VER_CHAN_PROTO(v, shift)	(((v) >> (shift)) & HC_VER_CHAN_PROTO_MASK)
 
 /*  RTL Version Register */
 #define RTL_VER				0x60
-#define RTL_VER_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Transmit Data 0~3 Register */
 #define TXD_REG				0x70
@@ -290,7 +294,6 @@
 
 /* Receive Data Register */
 #define RXD_REG				0x80
-#define RXD_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Send CRC Cycle Register */
 #define SEND_CRC_CYC			0x84
@@ -298,11 +301,9 @@
 
 /* Block Count Register */
 #define BLK_CNT				0x90
-#define BLK_CNT_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Argument Register */
 #define ARG_REG				0x94
-#define ARG_REG_CMD(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Command Register */
 #define CMD_REG				0x98
@@ -319,28 +320,22 @@
 
 /* Response 1 Register */
 #define RSP_1				0x9C
-#define RSP_1_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 2 Register */
 #define RSP_2				0xA0
-#define RSP_2_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 3 Register */
 #define RSP_3				0xA4
-#define RSP_3_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 4 Register */
 #define RSP_4				0xA8
 #define RSP_4_1_VALUE(x)		(((x) & 0xFF) << 0)
-#define RSP_4_0_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Buffer Data Port register */
 #define DATA_REG			0xAC
-#define DATA_REG_BUF(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Auto CMD Argument Register */
 #define AUTO_CMD			0xB0
-#define AUTO_CMD_ARGU(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Auto CMD Error Status Register */
 #define AUTO_CMD_ERR_STS		0xB4
@@ -351,7 +346,6 @@
 
 /* Boot System Address Register */
 #define BOOT_SYS_ADDR			0xB8
-#define BOOT_SYS_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Block Gap Control Register */
 #define BLK_GAP_CTRL			0xBC
@@ -370,7 +364,8 @@
 #define DEV_CTRL_TYPE_RAWNAND_EMMC	(6 << 29)
 #define DEV_CTRL_SCLK_SEL(x)		(((x) & 0xF) << 25)
 #define DEV_CTRL_SCLK_SEL_MASK		DEV_CTRL_SCLK_SEL(0xF)
-#define DEV_CTRL_SCLK_SEL_DIV(x)	((((x) >> 1) - 1) << 25)
+/* F(CLK_SS_I)/F(SCLK) = 2 * (SCLK_SEL + 1), so 0xF is the /32 divider. */
+#define DEV_CTRL_SCLK_SEL_SLOWEST	0xF
 #define DEV_CTRL_CACHEABLE		BIT(24)
 #define DEV_CTRL_WR_PLCY(x)		(((x) & 0x3) << 22)
 #define DEV_CTRL_PAGE_SIZE(x)		(((x) & 0x7) << 19)
@@ -396,7 +391,6 @@
 
 /* Top Mapping Address Register */
 #define TOP_MAP_ADDR			0xD0
-#define TOP_MAP_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* General Purpose Inputs and Outputs Register */
 #define GPIO_REG			0xD4
@@ -483,34 +477,6 @@
 #define SIO_ODLY_2_SIO5(x)		(((x) & 0xFF) << 16)
 #define SIO_ODLY_2_SIO6(x)		(((x) & 0xFF) << 8)
 #define SIO_ODLY_2_SIO7(x)		(((x) & 0xFF) << 0)
-
-#define UEFC_REG_HOST_CTRL		0x00
-#define UEFC_HC_CH_SEL			BIT(11)
-#define UEFC_HC_PORT_SEL		0xFF
-#define UEFC_REG_CAPABILITIES	0x58
-#define UEFC_CAP_DUAL_CHAN		BIT(31)
-#define UEFC_CAP_XSPI			BIT(30)
-#define UEFC_CAP_ONFI			BIT(29)
-#define UEFC_CAP_EMMC			BIT(28)
-#define UEFC_CAP_INTERFACES		(UEFC_CAP_XSPI | UEFC_CAP_ONFI | UEFC_CAP_EMMC)
-#define UEFC_CAP_MAPPING		BIT(27)
-#define UEFC_CAP_CACHE			BIT(26)
-#define UEFC_CAP_ATOMIC			BIT(25)
-#define UEFC_CAP_DMA_SLAVE		BIT(24)
-#define UEFC_CAP_DMA_MASTER		BIT(23)
-#define UEFC_REG_HOST_CTRL_VERSION	0x5C
-#define UEFC_HCV_CHAN_XSPI		0x1
-#define UEFC_HCV_CHAN_ONFI		0x2
-#define UEFC_HCV_CHAN_EMMC		0x3
-#define UEFC_HCV_CHAN_PROTO_MASK	(UEFC_HCV_CHAN_XSPI \
-					| UEFC_HCV_CHAN_ONFI \
-					| UEFC_HCV_CHAN_EMMC)
-#define UEFC_HCV_CHAN_A_SHIFT		4
-#define UEFC_HCV_CHAN_B_SHIFT		9
-#define UEFC_HCV_CHAN_A_PROTO_MASK	(UEFC_HCV_CHAN_PROTO_MASK << UEFC_HCV_CHAN_A_SHIFT)
-#define UEFC_HCV_CHAN_B_PROTO_MASK	(UEFC_HCV_CHAN_PROTO_MASK << UEFC_HCV_CHAN_B_SHIFT)
-#define UEFC_HCV_CHAN_B_MASK		0x600
-#define UEFC_REG_RTL_VERSION		0x60
 
 static const struct mfd_cell nand_cell = {
 	.name = "nand",
@@ -620,16 +586,16 @@ EXPORT_SYMBOL_GPL(uefc_update_register);
 int uefc_write_d_register(struct uefc_common *uefc, enum uefc_channel_id chan, u8 port,
 			  unsigned int reg, u32 val)
 {
-	u32 hc_mask = UEFC_HC_CH_SEL | UEFC_HC_PORT_SEL;
+	u32 hc_mask = HC_CTRL_CH_SEL | HC_CTRL_PORT_SEL_MASK;
 	unsigned long flags;
 	u32 hc_val;
 	int ret;
 
-	hc_val = (chan == CHANNEL_B) ? UEFC_HC_CH_SEL : 0;
-	hc_val |= (port & UEFC_HC_PORT_SEL);
+	hc_val = (chan == CHANNEL_B) ? HC_CTRL_CH_SEL : 0;
+	hc_val |= HC_CTRL_PORT_SEL(port);
 
 	spin_lock_irqsave(&uefc->reg_lock, flags);
-	ret = regmap_update_bits(uefc->regmap, UEFC_REG_HOST_CTRL, hc_mask, hc_val);
+	ret = regmap_update_bits(uefc->regmap, HC_CTRL, hc_mask, hc_val);
 	if (ret < 0)
 		goto out;
 	ret = regmap_write(uefc->regmap, reg, val);
@@ -657,16 +623,16 @@ EXPORT_SYMBOL_GPL(uefc_write_d_register);
 int uefc_read_d_register(struct uefc_common *uefc, enum uefc_channel_id chan, u8 port,
 			 unsigned int reg, u32 *val)
 {
-	u32 hc_mask = UEFC_HC_CH_SEL | UEFC_HC_PORT_SEL;
+	u32 hc_mask = HC_CTRL_CH_SEL | HC_CTRL_PORT_SEL_MASK;
 	unsigned long flags;
 	u32 hc_val;
 	int ret;
 
-	hc_val = (chan == CHANNEL_B) ? UEFC_HC_CH_SEL : 0;
-	hc_val |= (port & UEFC_HC_PORT_SEL);
+	hc_val = (chan == CHANNEL_B) ? HC_CTRL_CH_SEL : 0;
+	hc_val |= HC_CTRL_PORT_SEL(port);
 
 	spin_lock_irqsave(&uefc->reg_lock, flags);
-	ret = regmap_update_bits(uefc->regmap, UEFC_REG_HOST_CTRL, hc_mask, hc_val);
+	ret = regmap_update_bits(uefc->regmap, HC_CTRL, hc_mask, hc_val);
 	if (ret < 0)
 		goto out;
 	ret = regmap_read(uefc->regmap, reg, val);
@@ -692,16 +658,16 @@ EXPORT_SYMBOL_GPL(uefc_read_d_register);
 int uefc_update_d_register(struct uefc_common *uefc, enum uefc_channel_id chan, u8 port,
 			   unsigned int reg, u32 mask, u32 val)
 {
-	u32 hc_mask = UEFC_HC_CH_SEL | UEFC_HC_PORT_SEL;
+	u32 hc_mask = HC_CTRL_CH_SEL | HC_CTRL_PORT_SEL_MASK;
 	unsigned long flags;
 	u32 hc_val;
 	int ret;
 
-	hc_val = (chan == CHANNEL_B) ? UEFC_HC_CH_SEL : 0;
-	hc_val |= (port & UEFC_HC_PORT_SEL);
+	hc_val = (chan == CHANNEL_B) ? HC_CTRL_CH_SEL : 0;
+	hc_val |= HC_CTRL_PORT_SEL(port);
 
 	spin_lock_irqsave(&uefc->reg_lock, flags);
-	ret = regmap_update_bits(uefc->regmap, UEFC_REG_HOST_CTRL, hc_mask, hc_val);
+	ret = regmap_update_bits(uefc->regmap, HC_CTRL, hc_mask, hc_val);
 	if (ret < 0)
 		goto out;
 	ret = regmap_update_bits(uefc->regmap, reg, mask, val);
@@ -725,6 +691,8 @@ int uefc_init_channel(struct uefc_common *uefc, enum uefc_channel_id id,
 			     struct uefc_channel **res)
 {
 	struct uefc_channel *chan;
+	unsigned long ss_rate;
+	unsigned long ratio;
 	int ret;
 
 	chan = &uefc->chan[id];
@@ -733,42 +701,115 @@ int uefc_init_channel(struct uefc_common *uefc, enum uefc_channel_id id,
 		return -EBUSY;
 
 	chan->rx_clk = devm_clk_get(uefc->dev, id == CHANNEL_A ? "rx_a" : "rx_b");
-	if (IS_ERR(chan->rx_clk))
-		return PTR_ERR(chan->rx_clk);
+	if (IS_ERR(chan->rx_clk)) {
+		ret = PTR_ERR(chan->rx_clk);
+		goto err_unuse;
+	}
 
 	chan->tx_clk = devm_clk_get(uefc->dev, id == CHANNEL_A ? "tx_a" : "tx_b");
-	if (IS_ERR(chan->tx_clk))
-		return PTR_ERR(chan->tx_clk);
+	if (IS_ERR(chan->tx_clk)) {
+		ret = PTR_ERR(chan->tx_clk);
+		goto err_unuse;
+	}
 
 	ret = clk_prepare_enable(chan->rx_clk);
 	if (ret)
-		return ret;
+		goto err_unuse;
+
 	ret = clk_prepare_enable(chan->tx_clk);
 	if (ret) {
 		clk_disable_unprepare(chan->rx_clk);
-		return ret;
+		goto err_unuse;
 	}
+
+	/*
+	 * The controller has to be told how much faster the channel's receive
+	 * clock runs than the device side clock: the spec defines the RX_SS
+	 * field as F(CLK_RX_x_I)/F(CLK_SS_I), encoded as the ratio minus one.
+	 * Both rates are described in the device tree, so derive it rather than
+	 * assuming a particular clock tree.
+	 */
+	ratio = clk_get_rate(chan->rx_clk);
+	ss_rate = clk_get_rate(uefc->ss_clk);
+	if (!ss_rate || !ratio || ratio % ss_rate) {
+		dev_err(uefc->dev,
+			"rx clock (%lu Hz) must be a multiple of the ss clock (%lu Hz)\n",
+			ratio, ss_rate);
+		ret = -EINVAL;
+		goto err_disable;
+	}
+
+	ratio /= ss_rate;
+	if (ratio > CLK_CTRL_RX_SS_MAX) {
+		dev_err(uefc->dev, "rx/ss clock ratio %lu is above the %u supported\n",
+			ratio, CLK_CTRL_RX_SS_MAX);
+		ret = -EINVAL;
+		goto err_disable;
+	}
+
+	ret = uefc_update_register(uefc, CLK_CTRL,
+				   id == CHANNEL_A ? CLK_CTRL_RX_SS_A_MASK :
+						     CLK_CTRL_RX_SS_B_MASK,
+				   id == CHANNEL_A ? CLK_CTRL_RX_SS_A(ratio - 1) :
+						     CLK_CTRL_RX_SS_B(ratio - 1));
+	if (ret)
+		goto err_disable;
 
 	/*
 	 * Apply the default PHY sampling configuration: select the DDR/SDR
 	 * sample points, run the device clock at the slowest divider and clear
 	 * the per-SIO input/output delay lines so the controller starts from a
-	 * known, conservative timing.
+	 * known, conservative timing. The child drivers raise the clock once they
+	 * know what the attached device supports.
 	 */
-	uefc_write_d_register(uefc, id, 0, SAMPLE_ADJ,
-			      SAMPLE_ADJ_POINT_SEL_DDR(4) | SAMPLE_ADJ_POINT_SEL_SDR(3));
-	uefc_write_d_register(uefc, id, 0, DEV_CTRL, DEV_CTRL_SCLK_SEL(5));
-	uefc_update_d_register(uefc, id, 0, SAMPLE_ADJ,
-			       SAMPLE_ADJ_DQS_IDLY_DOPI(0xFF),
-			       SAMPLE_ADJ_DQS_IDLY_DOPI(0xFF));
-	uefc_write_d_register(uefc, id, 0, SIO_IDLY_1, 0);
-	uefc_write_d_register(uefc, id, 0, SIO_IDLY_2, 0);
-	uefc_write_d_register(uefc, id, 0, SIO_ODLY_1, 0);
-	uefc_write_d_register(uefc, id, 0, SIO_ODLY_2, 0);
+	ret = uefc_write_d_register(uefc, id, 0, SAMPLE_ADJ,
+				    SAMPLE_ADJ_POINT_SEL_DDR(5) | SAMPLE_ADJ_POINT_SEL_SDR(3));
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_write_d_register(uefc, id, 0, DEV_CTRL,
+				    DEV_CTRL_SCLK_SEL(DEV_CTRL_SCLK_SEL_SLOWEST));
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_update_d_register(uefc, id, 0, SAMPLE_ADJ,
+				     SAMPLE_ADJ_DQS_IDLY_DOPI(0xFF),
+				     SAMPLE_ADJ_DQS_IDLY_DOPI(0xFF));
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_write_d_register(uefc, id, 0, SIO_IDLY_1, 0);
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_write_d_register(uefc, id, 0, SIO_IDLY_2, 0);
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_write_d_register(uefc, id, 0, SIO_ODLY_1, 0);
+	if (ret)
+		goto err_disable;
+
+	ret = uefc_write_d_register(uefc, id, 0, SIO_ODLY_2, 0);
+	if (ret)
+		goto err_disable;
 
 	*res = chan;
 
 	return 0;
+
+err_disable:
+	clk_disable_unprepare(chan->tx_clk);
+	clk_disable_unprepare(chan->rx_clk);
+err_unuse:
+	/*
+	 * Hand the channel back so a later probe attempt (e.g. after a clock
+	 * provider shows up and -EPROBE_DEFER is retried) is not rejected with
+	 * -EBUSY by the reservation above.
+	 */
+	atomic_set(&chan->used, UEFC_CHAN_UNUSED);
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(uefc_init_channel);
 
@@ -794,17 +835,25 @@ void uefc_release_channel(struct uefc_common *uefc, struct uefc_channel *chan)
 }
 EXPORT_SYMBOL_GPL(uefc_release_channel);
 
-void uefc_set_io_mode(struct uefc_common *uefc, bool enable)
+int uefc_set_io_mode(struct uefc_common *uefc, bool enable)
 {
-	if (enable) {
-		uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_IO_START);
-		uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_HC_ACT);
-		uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_DEV_ACT);
-	} else {
-		u32 sts;
-		int ret;
+	int ret;
+	u32 sts;
 
-		uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_DEV_DIS);
+	if (enable) {
+		ret = uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_IO_START);
+		if (ret)
+			return ret;
+
+		ret = uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_HC_ACT);
+		if (ret)
+			return ret;
+
+		ret = uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_DEV_ACT);
+	} else {
+		ret = uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_DEV_DIS);
+		if (ret)
+			return ret;
 
 		/*
 		 * Per the UEFC I/O Mode programming flow, the TX FIFO must be
@@ -816,30 +865,104 @@ void uefc_set_io_mode(struct uefc_common *uefc, bool enable)
 		 */
 		ret = regmap_read_poll_timeout(uefc->regmap, PRES_STS, sts,
 					       sts & PRES_STS_TX_EMPT,
-					       1, USEC_PER_SEC);
-		if (ret)
+					       10, 10 * USEC_PER_MSEC);
+		if (ret) {
+			/*
+			 * Report the drain failure, but still end I/O mode:
+			 * leaving the host controller in I/O mode guarantees
+			 * that every subsequent operation fails, which is worse
+			 * than the truncated transfer we are already stuck with.
+			 */
 			dev_warn(uefc->dev,
 				 "TX FIFO not empty on I/O mode exit, PRES_STS %#x\n",
 				 sts);
+			uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_IO_END);
+			return ret;
+		}
 
-		uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_IO_END);
+		ret = uefc_write_register(uefc, TFR_CTRL, TFR_CTRL_IO_END);
 	}
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(uefc_set_io_mode);
 
-static void uefc_hw_init(struct uefc_common *uefc)
+/**
+ * uefc_hw_init - Apply the controller-wide configuration
+ *
+ * @uefc:	UEFC core handler
+ *
+ * Implements the controller-scoped part of the Set Controller Configuration
+ * Sequence from the UEFC specification (v2.12, Programming Guide,
+ * Initialization). Only registers that are global to the controller are
+ * touched here: the per-channel PHY timing (Sample Point Adjust and the SIO
+ * delay lines) is applied by uefc_init_channel(), and the Set Device
+ * Configuration Sequence is left to the child drivers.
+ *
+ * Host Controller Register
+ *	SIO_SHIFTER is set to 10b, which shifts SIO half a CLK_TX_I cycle
+ *	after SCLK. Devices require SIO to meet a setup/hold window around
+ *	the SCLK edge, and this field is the adjustment the controller
+ *	provides to satisfy it.
+ *
+ * Clock Control Register
+ *	RX_SS_A and RX_SS_B give the ratio between each channel's receive
+ *	clock and CLK_SS_I. The field encodes the ratio minus one, so the 1
+ *	programmed here means CLK_RX_x_I runs at twice CLK_SS_I. Both must
+ *	match the board clock tree before any device operation.
+ *
+ * Normal and Error Interrupt Status Registers
+ *	The event bits are RW1C, so writing the mask back clears events left
+ *	over from a previous boot or reset.
+ *
+ * Normal and Error Interrupt Status Enable Registers
+ *	Gate whether an event is recorded in the status register at all; a
+ *	masked event never becomes visible.
+ *
+ * Normal and Error Interrupt Signal Enable Registers
+ *	Gate whether a recorded event is allowed to assert the interrupt line.
+ *
+ * Note that the closing write to INT_STS_EN replaces the mask programmed
+ * earlier in the sequence rather than adding to it, so it alone determines
+ * which normal interrupt statuses end up enabled.
+ *
+ * Returns 0 on success, a negative errno otherwise
+ */
+static int uefc_hw_init(struct uefc_common *uefc)
 {
-	uefc_update_register(uefc, HC_CTRL, HC_CTRL_SIO_SHIFTER(3), HC_CTRL_SIO_SHIFTER(2));
-	uefc_write_register(uefc, CLK_CTRL, CLK_CTRL_RX_SS_A(1) | CLK_CTRL_RX_SS_B(1));
-	uefc_write_register(uefc, INT_STS, INT_STS_ALL_CLR);
-	uefc_write_register(uefc, INT_STS_EN, INT_STS_EN_ALL_EN);
-	uefc_write_register(uefc, INT_STS_SIG_EN, INT_STS_SIG_EN_ALL_EN);
+	int ret;
 
-	uefc_write_register(uefc, ERR_INT_STS, ERR_INT_STS_ALL_CLR);
-	uefc_write_register(uefc, ERR_INT_STS_EN, ERR_INT_STS_EN_ALL_EN);
-	uefc_write_register(uefc, ERR_INT_STS_SIG_EN, ERR_INT_STS_SIG_EN_ALL_EN);
+	ret = uefc_update_register(uefc, HC_CTRL, HC_CTRL_SIO_SHIFTER(3), HC_CTRL_SIO_SHIFTER(2));
+	if (ret)
+		return ret;
 
-	uefc_write_register(uefc, INT_STS_EN, INT_STS_DMA | INT_STS_EN_DMA_TFR_CMPLT);
+	ret = uefc_write_register(uefc, INT_STS, INT_STS_ALL_CLR);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, INT_STS_EN, INT_STS_EN_ALL_EN);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, INT_STS_SIG_EN, INT_STS_SIG_EN_ALL_EN);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, ERR_INT_STS, ERR_INT_STS_ALL_CLR);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, ERR_INT_STS_EN, ERR_INT_STS_EN_ALL_EN);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, ERR_INT_STS_SIG_EN, ERR_INT_STS_SIG_EN_ALL_EN);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(uefc, INT_STS_EN, INT_STS_DMA | INT_STS_EN_DMA_TFR_CMPLT);
+
+	return ret;
 }
 
 static int uefc_probe(struct platform_device *pdev)
@@ -848,9 +971,9 @@ static int uefc_probe(struct platform_device *pdev)
 	struct uefc_common *uefc;
 	struct gpio_desc *reset;
 	struct resource *res;
+	bool added = false;
 	void __iomem *regs;
 	u32 host_version;
-	bool added = false;
 	u32 proto[2];
 	int ret;
 	int i;
@@ -899,29 +1022,34 @@ static int uefc_probe(struct platform_device *pdev)
 		uefc->dirmap.size = resource_size(res);
 	}
 
-	ret = regmap_read(uefc->regmap, UEFC_REG_HOST_CTRL_VERSION, &host_version);
+	ret = regmap_read(uefc->regmap, HC_VER, &host_version);
 	if (ret)
 		return ret;
 
-	uefc_hw_init(uefc);
+	ret = uefc_hw_init(uefc);
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to initialize the controller\n");
 
 	dev_set_drvdata(dev, uefc);
 
-	proto[0] = (host_version & UEFC_HCV_CHAN_A_PROTO_MASK) >> UEFC_HCV_CHAN_A_SHIFT;
-	proto[1] = (host_version & UEFC_HCV_CHAN_B_PROTO_MASK) >> UEFC_HCV_CHAN_B_SHIFT;
+	proto[0] = HC_VER_CHAN_PROTO(host_version, HC_VER_CHAN_A_SHIFT);
+	proto[1] = HC_VER_CHAN_PROTO(host_version, HC_VER_CHAN_B_SHIFT);
+
+	dev_dbg(dev, "HC_VER %#x, protocol A=%u B=%u\n", host_version, proto[0], proto[1]);
+
 	for (i = 0; i < UEFC_CHANNELS_NB; i++) {
 		const struct mfd_cell *cell;
 
 		uefc->chan[i].id = i;
 
 		switch (proto[i]) {
-		case UEFC_HCV_CHAN_XSPI:
+		case HC_VER_CHAN_PROTO_XSPI:
 			cell = &xspi_cell;
 			break;
-		case UEFC_HCV_CHAN_ONFI:
+		case HC_VER_CHAN_PROTO_ONFI:
 			cell = &nand_cell;
 			break;
-		case UEFC_HCV_CHAN_EMMC:
+		case HC_VER_CHAN_PROTO_EMMC:
 			cell = &memory_cell;
 			break;
 		default:

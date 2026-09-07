@@ -34,6 +34,23 @@ struct uefc_channel {
 };
 
 /**
+ * struct uefc_dirmap - Direct-mapped flash window
+ *
+ * @addr:	ioremap cookie for the window
+ * @raw_addr:	Physical base address of the window
+ * @size:	Size of the window, in bytes
+ *
+ * The window lets flash contents be accessed without going through the
+ * register interface. It is optional: a controller may be synthesised without
+ * it, and it is only mapped when the device tree describes a "dirmap" region.
+ */
+struct uefc_dirmap {
+	void __iomem *addr;
+	dma_addr_t raw_addr;
+	size_t size;
+};
+
+/**
  * struct uefc_common - Common UEFC resources
  *
  * @dev:	UEFC device
@@ -47,8 +64,7 @@ struct uefc_channel {
  *		The default lock can't be used because of Cat. D registers.
  *		Indeed, to access them, we first have to select the chan/port
  *		from the Host Controller Register.
- * @dirmap:	Optional direct-mapped flash window (@addr ioremap cookie,
- *		@raw_addr physical base and @size span).
+ * @dirmap:	Optional direct-mapped flash window
  */
 struct uefc_common {
 	struct device *dev;
@@ -59,11 +75,7 @@ struct uefc_common {
 	struct mutex tfr_lock;
 	spinlock_t reg_lock;
 
-	struct {
-		void __iomem *addr;
-		dma_addr_t raw_addr;
-		size_t size;
-	} dirmap;
+	struct uefc_dirmap dirmap;
 };
 
 /* Helpers to read/write Cat A, B, C and E registers */
@@ -82,5 +94,5 @@ int uefc_update_d_register(struct uefc_common *uefc, enum uefc_channel_id chan, 
 int uefc_init_channel(struct uefc_common *uefc, enum uefc_channel_id id,
 		      struct uefc_channel **chan);
 void uefc_release_channel(struct uefc_common *uefc, struct uefc_channel *chan);
-void uefc_set_io_mode(struct uefc_common *uefc, bool enable);
+int uefc_set_io_mode(struct uefc_common *uefc, bool enable);
 #endif /* _LINUX_INCLUDE_MFD_UEFC_COMMON_H_ */
