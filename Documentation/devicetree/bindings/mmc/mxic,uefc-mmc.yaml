@@ -24,14 +24,6 @@ properties:
     description: UEFC channel used
     enum: [0, 1]
 
-  vcc-gpios:
-    description: Optional GPIO controlling the card power (VCC) supply
-    maxItems: 1
-
-  vccq-gpios:
-    description: Optional GPIO controlling the card I/O (VCCQ) supply
-    maxItems: 1
-
 required:
   - compatible
   - reg

@@ -21,7 +21,18 @@ properties:
       - mxic,uefc
 
   reg:
-    maxItems: 1
+    minItems: 1
+    items:
+      - description: Host controller register block
+      - description:
+          Direct-mapped window the flash contents are accessed through,
+          bypassing the register interface.
+
+  reg-names:
+    minItems: 1
+    items:
+      - const: regs
+      - const: dirmap
 
   interrupts:
     maxItems: 2
@@ -36,8 +47,19 @@ properties:
     description: GPIO connected the active-low reset
 
   clocks:
-    minItems: 6
-    maxItems: 6
+    items:
+      - description: Clock domain 1, the system side of the TX/RX FIFO.
+      - description:
+          Clock domain 2, the device side of the TX/RX FIFO. The serial clock
+          driven to the memory devices is derived from this one.
+      - description:
+          Output logic of the channel A interface. Must be synchronous with
+          the device side clock and an integer multiple of its rate.
+      - description:
+          Input logic of the channel A interface. Must be synchronous with the
+          device side clock and an integer multiple of its rate.
+      - description: Output logic of the channel B interface, as for channel A.
+      - description: Input logic of the channel B interface, as for channel A.
 
   clock-names:
     items:
@@ -70,6 +92,7 @@ patternProperties:
 required:
   - compatible
   - reg
+  - reg-names
   - clocks
   - clock-names
   - "#address-cells"
@@ -86,8 +109,10 @@ examples:
 
       uefc: uefc@43a00000 {
         compatible = "mxic,uefc";
-        reg = <0x43a00000 0x1000>;
-        clocks = <&clk_sys>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>, <&clk_ss>;
+        reg = <0x43a00000 0x1000>, <0x60000000 0x4000000>;
+        reg-names = "regs", "dirmap";
+        clocks = <&clk_sys>, <&clk_ss>,
+                 <&clk_if>, <&clk_if>, <&clk_if>, <&clk_if>;
         clock-names = "sys", "ss", "tx_a", "rx_a", "tx_b", "rx_b";
         #address-cells = <1>;
         #size-cells = <0>;
