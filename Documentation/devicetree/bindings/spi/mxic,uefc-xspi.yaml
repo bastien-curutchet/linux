@@ -11,7 +11,7 @@ maintainers:
 
 description: |
   The xSPI sub-node of the Macronix UEFC drives a SPI/OctaSPI memory channel of
-  the host controller. See mxic,uefc.yaml for the parent device.
+  the host controller. See mfd/mxic,uefc.yaml for the parent device.
 
 allOf:
   - $ref: spi-controller.yaml#
