@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0
 
-#include <linux/clk.h>
-#include <linux/io.h>
-#include <linux/iopoll.h>
+#include <linux/delay.h>
+#include <linux/dma-mapping.h>
+#include <linux/mfd/uefc-common.h>
 #include <linux/module.h>
 #include <linux/mtd/mtd.h>
-#include <linux/mtd/nand-ecc-sw-hamming.h>
 #include <linux/mtd/rawnand.h>
-#include <linux/mfd/uefc-common.h>
-#include <linux/dma-mapping.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
-#include <linux/delay.h>
 
 #include "internals.h"
 
@@ -179,7 +173,7 @@
 /* share with MAPRD, MAPWR */
 #define OP_PREP_MASK		(OP_DMY_CNT(0x3F) |	\
 				 OP_ADDR_CNT(0x07) |	\
-				 OP_CMD_CNT(2) |		\
+				 OP_CMD_CNT(2) |	\
 				 OP_DATA_BUSW(0x03) |	\
 				 OP_DATA_DTR(0x01) |	\
 				 OP_ADDR_BUSW(0x03) |	\
@@ -189,7 +183,7 @@
 				 OP_DD_RD)
 #define OP_DMY_CNT(x)		(((x) & 0x3F) << 21)
 #define OP_ADDR_CNT(x)		(((x) & 0x7) << 18)
-#define OP_CMD_CNT(x)		(((x) - 1) << 17)
+#define OP_CMD_CNT(x)		(((x) >> 1) << 17)
 #define OP_DATA_BUSW(x)		(((x) & 0x3) << 14)
 #define OP_DATA_DTR(x)		(((x) & 0x1) << 16)
 #define OP_ADDR_BUSW(x)		(((x) & 0x3) << 11)
@@ -234,15 +228,12 @@
 
 /* SDMA Transfer Count Register */
 #define SDMA_CNT			0x28
-#define SDMA_CNT_TFR_BYTE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* SDMA System Address Register */
 #define SDMA_ADDR			0x2C
-#define SDMA_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* ADMA2 System Address Register */
 #define ADMA2_ADDR			0x30
-#define ADMA2_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /*
  * ADMA2 descriptor (64-bit): [ data address : 32 | length : 16 | attr : 16 ]
@@ -258,11 +249,9 @@
 
 /* ADMA3 Integrated Descriptor Address Register */
 #define ADMA3_ADDR			0x34
-#define ADMA3_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Mapping Base Address Register */
 #define BASE_MAP_ADDR			0x38
-#define BASE_MAP_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Software Reset Register */
 #define SW_RST				0x44
@@ -311,11 +300,9 @@
 
 /* Host Controller Version Register */
 #define HC_VER				0x5C
-#define HC_VER_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /*  RTL Version Register */
 #define RTL_VER				0x60
-#define RTL_VER_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Transmit Data 0~3 Register */
 #define TXD_REG				0x70
@@ -323,7 +310,6 @@
 
 /* Receive Data Register */
 #define RXD_REG				0x80
-#define RXD_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Send CRC Cycle Register */
 #define SEND_CRC_CYC			0x84
@@ -331,11 +317,9 @@
 
 /* Block Count Register */
 #define BLK_CNT				0x90
-#define BLK_CNT_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Argument Register */
 #define ARG_REG				0x94
-#define ARG_REG_CMD(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Command Register */
 #define CMD_REG				0x98
@@ -352,28 +336,22 @@
 
 /* Response 1 Register */
 #define RSP_1				0x9C
-#define RSP_1_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 2 Register */
 #define RSP_2				0xA0
-#define RSP_2_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 3 Register */
 #define RSP_3				0xA4
-#define RSP_3_VALUE(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Response 4 Register */
 #define RSP_4				0xA8
 #define RSP_4_1_VALUE(x)		(((x) & 0xFF) << 0)
-#define RSP_4_0_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Buffer Data Port register */
 #define DATA_REG			0xAC
-#define DATA_REG_BUF(x)			(((x) & 0xFFFFFFFF) << 0)
 
 /* Auto CMD Argument Register */
 #define AUTO_CMD			0xB0
-#define AUTO_CMD_ARGU(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* Auto CMD Error Status Register */
 #define AUTO_CMD_ERR_STS		0xB4
@@ -384,8 +362,6 @@
 
 /* Boot System Address Register */
 #define BOOT_SYS_ADDR			0xB8
-#define BOOT_SYS_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
-
 /* Block Gap Control Register */
 #define BLK_GAP_CTRL			0xBC
 #define BLK_GAP_CTRL_CONT_REQ		BIT(1)
@@ -429,7 +405,6 @@
 
 /* Top Mapping Address Register */
 #define TOP_MAP_ADDR			0xD0
-#define TOP_MAP_ADDR_VALUE(x)		(((x) & 0xFFFFFFFF) << 0)
 
 /* General Purpose Inputs and Outputs Register */
 #define GPIO_REG			0xD4
@@ -517,50 +492,75 @@
 #define SIO_ODLY_2_SIO6(x)		(((x) & 0xFF) << 8)
 #define SIO_ODLY_2_SIO7(x)		(((x) & 0xFF) << 0)
 
+/* One ADMA2 descriptor for the page data, one for the OOB area. */
+#define UEFC_NAND_ADMA_DESC_NB		2
+#define UEFC_NAND_ADMA_TABLE_SIZE	(UEFC_NAND_ADMA_DESC_NB * sizeof(u64))
+
+/**
+ * struct uefc_nand - UEFC raw NAND channel
+ *
+ * @uefc:	UEFC core handler
+ * @chan:	Channel this NAND controller drives
+ * @controller:	Base NAND controller structure
+ * @chip:	NAND chip attached to the channel
+ * @adma_desc:	ADMA2 descriptor table
+ * @adma_desc_dma: DMA address of the descriptor table
+ * @data_buf:	Bounce buffer for the page data
+ * @data_buf_dma: DMA address of the page data bounce buffer
+ * @oob_buf:	Bounce buffer for the OOB area
+ * @oob_buf_dma: DMA address of the OOB bounce buffer
+ *
+ * The buffers are allocated once, after nand_scan() has established the page
+ * and OOB sizes, and reused by every transfer. They are shared by the whole
+ * channel: page reads and writes hold the host controller's transfer lock for
+ * their entire DMA sequence, and a channel drives a single chip, so no two
+ * transfers can be in flight at once.
+ */
 struct uefc_nand {
 	struct uefc_common *uefc;
 	struct uefc_channel *chan;
 	struct nand_controller controller;
 	struct nand_chip chip;
+
+	u64 *adma_desc;
+	dma_addr_t adma_desc_dma;
+	void *data_buf;
+	dma_addr_t data_buf_dma;
+	void *oob_buf;
+	dma_addr_t oob_buf_dma;
+};
+
+struct xfer_info {
+	const struct nand_op_cmd_instr *cmd;
+	const struct nand_op_addr_instr *addr;
+	const struct nand_op_data_instr *data;
+	bool read;
+	const struct nand_op_waitrdy_instr *waitrdy;
 };
 
 #define UEFC_NAND_WAITRDY_TIMEOUT_MS	1000
 
 /*
- * R/B# is not wired to the controller on this board, so a read's ready state
- * cannot be sensed. Wait this long instead, comfortably covering the array read
- * busy time (tR) of the supported NAND, including the longer tR seen once on-die
- * ECC is enabled.
- */
-#define UEFC_NAND_READ_BUSY_US		200
-
-/*
  * Wait for the device to become ready after a read-type operation (READ PARAM,
  * GET FEATURES, page read).
  *
- * The R/B# line is not connected to the controller on this board, so the GPIO
- * RYBYB_LEVEL bit does not reflect the device's real busy/ready state -- it
- * reads "ready" immediately. Polling it returned too early, so the data phase
- * started during tR and clocked out leading 0xFF bytes, shifting the whole
- * transfer (e.g. the ONFI parameter page signature ended up off by several
- * bytes). These read-type commands have no way to poll the status register
- * mid-sequence, so wait a fixed time that covers tR instead.
+ * The controller samples the NAND R/B# line into the read-only RYBYB_LEVEL bit
+ * of its General Purpose Inputs and Outputs Register, but the line is not fed
+ * to the interrupt block: nothing is raised when the device goes ready. The
+ * only way to observe the transition is to poll that bit.
  */
-static int uefc_nfc_read_wait_ready(struct nand_chip *chip)
+static int uefc_onfi_read_wait_ready(struct nand_chip *chip)
 {
-       struct uefc_nand *mxic = nand_get_controller_data(chip);
-       u32 sts;
-       int ret;
+	struct uefc_nand *mxic = nand_get_controller_data(chip);
+	u32 sts;
+	int ret;
 
-       ret = regmap_read_poll_timeout(mxic->uefc->regmap, GPIO_REG, sts,
-                                      sts & GPIO_REG_RYBYB_LEVEL, 0, USEC_PER_SEC);
-
-       if (ret) {
-               dev_err(mxic->uefc->dev, "nand device timeout\n");
-               return -ETIMEDOUT;
-       }
-
-	// udelay(UEFC_NAND_READ_BUSY_US);
+	ret = regmap_read_poll_timeout(mxic->uefc->regmap, GPIO_REG, sts,
+				       sts & GPIO_REG_RYBYB_LEVEL, 0, USEC_PER_SEC);
+	if (ret) {
+		dev_err(mxic->uefc->dev, "nand device timeout\n");
+		return -ETIMEDOUT;
+	}
 
 	return 0;
 }
@@ -572,7 +572,7 @@ static int uefc_nfc_read_wait_ready(struct nand_chip *chip)
  * READ STATUS command via exec_op (nand_status_op()), which the hardware can
  * service, rather than relying on nand_soft_waitrdy().
  */
-static int uefc_nfc_wait_ready(struct nand_chip *chip)
+static int uefc_onfi_wait_ready(struct nand_chip *chip)
 {
 	struct uefc_nand *mxic = nand_get_controller_data(chip);
 	unsigned long timeout;
@@ -595,13 +595,35 @@ static int uefc_nfc_wait_ready(struct nand_chip *chip)
 	return -ETIMEDOUT;
 }
 
-static int uefc_nfc_data_xfer(struct uefc_nand *mxic, const void *txbuf,
+/*
+ * Move a command, address or data payload through the controller, one FIFO
+ * word at a time.
+ *
+ * The TX and RX FIFOs are linked: reading the TX FIFO is what induces a write
+ * into the RX FIFO, so every byte shifted out - command, address, dummy or
+ * data alike - shifts one byte in. Both transfer directions therefore have to
+ * drive both FIFOs, which is why the loop below is the same for reads and
+ * writes:
+ *
+ *  - A read has nothing to send, but the TXD write is what generates the shift
+ *    events, so it pads the TX FIFO with dummy bytes instead. Drop the padding
+ *    (or the TX_NFULL poll that paces it) and nothing is ever shifted into the
+ *    RX FIFO, leaving the RX_NEMPT poll below to time out.
+ *  - A write has nothing to collect, but the RX FIFO fills up behind it all
+ *    the same and the transfer stalls once it is full, so RXD is drained even
+ *    when there is no caller buffer to copy it into.
+ *
+ * This mirrors the TX/RX interleaving sequence in the controller
+ * documentation: poll TX not full, write TXD, poll RX not empty, read RXD.
+ */
+static int uefc_onfi_data_xfer(struct uefc_nand *mxic, const void *txbuf,
 			      void *rxbuf, unsigned int len)
 {
 	unsigned int pos = 0;
 
 	while (pos < len) {
 		unsigned int nbytes = len - pos;
+		/* Dummy padding, overwritten below when there is data to send. */
 		u32 data = 0xffffffff;
 		u32 sts;
 		int ret;
@@ -641,14 +663,6 @@ static int uefc_nfc_data_xfer(struct uefc_nand *mxic, const void *txbuf,
 	return 0;
 }
 
-struct xfer_info {
-	const struct nand_op_cmd_instr *cmd;
-	const struct nand_op_addr_instr *addr;
-	const struct nand_op_data_instr *data;
-	u8 dir;
-	const struct nand_op_waitrdy_instr *waitrdy;
-};
-
 static unsigned int uefc_onfi_prep_cad(const struct nand_operation *op,
 					    struct xfer_info *cad)
 {
@@ -674,12 +688,12 @@ static unsigned int uefc_onfi_prep_cad(const struct nand_operation *op,
 
 		case NAND_OP_DATA_IN_INSTR:
 			cad[cad_count].data = &instr->ctx.data;
-			cad[cad_count].dir = 1;
+			cad[cad_count].read = true;
 			break;
 
 		case NAND_OP_DATA_OUT_INSTR:
 			cad[cad_count].data = &instr->ctx.data;
-			cad[cad_count].dir = 0;
+			cad[cad_count].read = false;
 			break;
 
 		case NAND_OP_WAITRDY_INSTR:
@@ -710,7 +724,7 @@ static u32 uefc_onfi_prep_op_cfg(struct xfer_info *cad)
 
 	if (cad->data) {
 		cfg |= OP_DATA_DTR(0);
-		if (cad->dir)
+		if (cad->read)
 			cfg |= OP_DD_RD;
 	}
 
@@ -767,47 +781,56 @@ static int uefc_onfi_exec_op(struct nand_chip *chip,
 	 * transfer and byte-swap the NAND data.
 	 */
 	if (mxic->chan->id == CHANNEL_A)
-		uefc_update_register(mxic->uefc, HC_CTRL,
-				     HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER, HC_CTRL_CH_SEL_A);
+		ret = uefc_update_register(mxic->uefc, HC_CTRL,
+					   HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER, HC_CTRL_CH_SEL_A);
 	else
-		uefc_update_register(mxic->uefc, HC_CTRL,
-				     HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER, HC_CTRL_CH_SEL_B);
+		ret = uefc_update_register(mxic->uefc, HC_CTRL,
+					   HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER, HC_CTRL_CH_SEL_B);
+	if (ret)
+		return ret;
 
-	uefc_write_register(mxic->uefc, INT_STS, INT_STS_DMA_TFR_CMPLT | INT_STS_DMA_INT);
-	uefc_write_register(mxic->uefc, TFR_CTRL, TFR_CTRL_IO_START);
-	uefc_write_register(mxic->uefc, TFR_CTRL, TFR_CTRL_DEV_ACT);
+	ret = uefc_write_register(mxic->uefc, TFR_CTRL, TFR_CTRL_IO_START);
+	if (ret)
+		return ret;
+
+	ret = uefc_write_register(mxic->uefc, TFR_CTRL, TFR_CTRL_DEV_ACT);
+	if (ret)
+		return ret;
+
 	cad_count = uefc_onfi_prep_cad(op, cad);
 	for (cad_id = 0; cad_id < cad_count; cad_id++) {
-		uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_op_cfg(&cad[cad_id]));
+		ret = uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_op_cfg(&cad[cad_id]));
+		if (ret)
+			return ret;
 
 		if (cad[cad_id].cmd) {
 			uefc_write_register(mxic->uefc, TFR_CTRL, TFR_CTRL_HC_ACT);
-			ret = uefc_nfc_data_xfer(mxic, &cad[cad_id].cmd->opcode, NULL, 1);
+			ret = uefc_onfi_data_xfer(mxic, &cad[cad_id].cmd->opcode, NULL, 1);
 			if (ret)
 				break;
 		}
 
 		if (cad[cad_id].addr) {
-			ret = uefc_nfc_data_xfer(mxic, cad[cad_id].addr->addrs, NULL,
+			ret = uefc_onfi_data_xfer(mxic, cad[cad_id].addr->addrs, NULL,
 						 cad[cad_id].addr->naddrs);
 			if (ret)
 				break;
 		}
 
 		/* A read operation waits on the hardware R/B# line. */
-		if (cad[cad_id].waitrdy && cad[cad_id].data && cad[cad_id].dir) {
-			ret = uefc_nfc_read_wait_ready(chip);
+		if (cad[cad_id].waitrdy && cad[cad_id].data && cad[cad_id].read) {
+			ret = uefc_onfi_read_wait_ready(chip);
 			if (ret)
 				break;
 		}
 
 		if (cad[cad_id].data) {
-			if (cad[cad_id].dir)
-				ret = uefc_nfc_data_xfer(mxic, NULL,
+			if (cad[cad_id].read)
+				ret = uefc_onfi_data_xfer(mxic, NULL,
 							 cad[cad_id].data->buf.in,
 							 cad[cad_id].data->len);
 			else
-				ret = uefc_nfc_data_xfer(mxic,
+				ret = uefc_onfi_data_xfer(mxic,
 							 cad[cad_id].data->buf.out, NULL,
 							 cad[cad_id].data->len);
 			if (ret)
@@ -820,23 +843,32 @@ static int uefc_onfi_exec_op(struct nand_chip *chip,
 		 * while waiting since the poll re-enters exec_op.
 		 */
 		if (cad[cad_id].waitrdy &&
-		    ((cad[cad_id].data && !cad[cad_id].dir) || !cad[cad_id].data)) {
-			uefc_set_io_mode(mxic->uefc, false);
-			mutex_unlock(&mxic->uefc->tfr_lock);
+		    ((cad[cad_id].data && !cad[cad_id].read) || !cad[cad_id].data)) {
+			ret = uefc_set_io_mode(mxic->uefc, false);
+			if (ret)
+				return ret;
 
-			ret = uefc_nfc_wait_ready(chip);
+			mutex_unlock(&mxic->uefc->tfr_lock);
+			ret = uefc_onfi_wait_ready(chip);
 			if (ret)
 				goto out;
 
 			mutex_lock(&mxic->uefc->tfr_lock);
-			uefc_update_register(mxic->uefc, HC_CTRL,
-					     HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
-					     mxic->chan->id == CHANNEL_A ?
-					     HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
-			uefc_set_io_mode(mxic->uefc, true);
+			ret = uefc_update_register(mxic->uefc, HC_CTRL,
+						   HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
+						   mxic->chan->id == CHANNEL_A ?
+						   HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
+			if (ret)
+				return ret;
+
+			ret = uefc_set_io_mode(mxic->uefc, true);
+			if (ret)
+				return ret;
 		}
 	}
-	uefc_set_io_mode(mxic->uefc, false);
+	ret = uefc_set_io_mode(mxic->uefc, false);
+	if (ret)
+		return ret;
 	mutex_unlock(&mxic->uefc->tfr_lock);
 out:
 	return ret;
@@ -868,157 +900,135 @@ static int uefc_nand_page_read_begin(struct nand_chip *chip, int page)
 static int uefc_nand_wait_dma_done(struct uefc_nand *mxic)
 {
 	u32 int_sts, err_sts;
-	unsigned long timeout;
+	int ret;
 
-	timeout = jiffies + usecs_to_jiffies(UEFC_NAND_DMA_TIMEOUT_US);
-	do {
-		uefc_read_register(mxic->uefc, ERR_INT_STS, &err_sts);
-		uefc_read_register(mxic->uefc, INT_STS, &int_sts);
+	ret = regmap_read_poll_timeout(mxic->uefc->regmap, INT_STS, int_sts,
+				       int_sts & (INT_STS_DMA_TFR_CMPLT | INT_STS_ERR_INT),
+				       0, UEFC_NAND_DMA_TIMEOUT_US);
+	if (ret) {
+		dev_err(mxic->uefc->dev, "DMA transfer timeout\n");
+		return ret;
+	}
 
-		if (err_sts & ERR_INT_STS_ADMA) {
-			uefc_write_register(mxic->uefc, ERR_INT_STS, ERR_INT_STS_ADMA);
-			dev_err(mxic->uefc->dev, "ADMA transfer error\n");
-			return -EIO;
-		}
+	/*
+	 * ERR_INT is a read-only summary of the Error Interrupt Status
+	 * Register, so the details are only worth fetching - and clearing -
+	 * once it reports that something went wrong.
+	 */
+	if (int_sts & INT_STS_ERR_INT) {
+		ret = uefc_read_register(mxic->uefc, ERR_INT_STS, &err_sts);
+		if (ret)
+			return ret;
 
-		if (int_sts & INT_STS_DMA_TFR_CMPLT) {
-			uefc_write_register(mxic->uefc, INT_STS, INT_STS_DMA_TFR_CMPLT);
-			return 0;
-		}
+		dev_err(mxic->uefc->dev, "DMA transfer error, ERR_INT_STS %#x\n",
+			err_sts);
+		uefc_write_register(mxic->uefc, ERR_INT_STS, err_sts);
 
-		cpu_relax();
-	} while (time_before(jiffies, timeout));
+		return -EIO;
+	}
 
-	dev_err(mxic->uefc->dev, "DMA transfer timeout\n");
-	return -ETIMEDOUT;
+	return uefc_write_register(mxic->uefc, INT_STS, INT_STS_DMA_TFR_CMPLT);
 }
 
 static int uefc_nand_page_read(struct mtd_info *mtd, struct nand_chip *chip,
 			       void *buf, void *oob_buf, int oob_len, int page)
 {
-	dma_addr_t dma_addr = 0, dma_addr_oob = 0, desc_table_dma_addr;
 	struct uefc_nand *mxic = nand_get_controller_data(chip);
-	size_t desc_size = 2 * sizeof(u64);
-	void *data_buf = NULL, *data_oob_buf = NULL;
 	u8 cmd = NAND_CMD_READSTART;
-	u64 *adma2_table;
 	int i = 0;
-	bool locked = false;
-	bool io_on = false;
 	int ret;
 
 	if (!buf && !oob_buf)
 		return 0;
 
-	adma2_table = dma_alloc_coherent(mxic->uefc->dev, desc_size,
-					 &desc_table_dma_addr, GFP_KERNEL);
-	if (!adma2_table)
-		return -ENOMEM;
+	if (buf)
+		mxic->adma_desc[i++] = ADMA2_DESC(mxic->data_buf_dma, mtd->writesize);
 
-	if (buf) {
-		data_buf = dma_alloc_coherent(mxic->uefc->dev, mtd->writesize,
-					      &dma_addr, GFP_KERNEL);
-		if (!data_buf) {
-			ret = -ENOMEM;
-			goto out_free_desc;
-		}
+	if (oob_buf)
+		mxic->adma_desc[i++] = ADMA2_DESC(mxic->oob_buf_dma, mtd->oobsize);
 
-		adma2_table[i++] = ADMA2_DESC(dma_addr, mtd->writesize);
-	}
+	mxic->adma_desc[i - 1] |= ADMA2_DESC_ATTR_END;
 
-	if (oob_buf) {
-		data_oob_buf = dma_alloc_coherent(mxic->uefc->dev, mtd->oobsize,
-						  &dma_addr_oob, GFP_KERNEL);
-		if (!data_oob_buf) {
-			ret = -ENOMEM;
-			goto out_unmap_buf;
-		}
-		adma2_table[i++] = ADMA2_DESC(dma_addr_oob, mtd->oobsize);
-	}
-
-	if (i > 0)
-		adma2_table[i - 1] |= ADMA2_DESC_ATTR_END;
-
-	uefc_nand_page_read_begin(chip, page);
+	ret = uefc_nand_page_read_begin(chip, page);
+	if (ret)
+		return ret;
 
 	mutex_lock(&mxic->uefc->tfr_lock);
-	locked = true;
 
-	uefc_update_register(mxic->uefc, HC_CTRL,
-			     HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
-			     mxic->chan->id == CHANNEL_A ?
-			     HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
-
-	uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_rd_cfg());
-	uefc_set_io_mode(mxic->uefc, true);
-	io_on = true;
-
-	ret = uefc_nfc_data_xfer(mxic, &cmd, NULL, 1);
+	ret = uefc_update_register(mxic->uefc, HC_CTRL,
+				   HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
+				   mxic->chan->id == CHANNEL_A ?
+				   HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
 	if (ret)
-		goto out_unmap_oob;
+		goto out_unlock;
 
-	ret = uefc_nfc_read_wait_ready(chip);
+	ret = uefc_write_register(mxic->uefc, INT_STS,
+				  INT_STS_DMA_TFR_CMPLT | INT_STS_DMA_INT);
 	if (ret)
-		goto out_unmap_oob;
+		goto out_unlock;
 
-	uefc_write_register(mxic->uefc, ADMA2_ADDR, lower_32_bits(desc_table_dma_addr));
+	ret = uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_rd_cfg());
+	if (ret)
+		goto out_unlock;
+
+	ret = uefc_set_io_mode(mxic->uefc, true);
+	if (ret)
+		goto out_unlock;
+
+	ret = uefc_onfi_data_xfer(mxic, &cmd, NULL, 1);
+	if (ret)
+		goto out;
+
+	ret = uefc_onfi_read_wait_ready(chip);
+	if (ret)
+		goto out;
+
+	ret = uefc_write_register(mxic->uefc, ADMA2_ADDR,
+				  lower_32_bits(mxic->adma_desc_dma));
+	if (ret)
+		goto out;
 
 	ret = uefc_nand_wait_dma_done(mxic);
 	if (ret)
-		goto out_unmap_oob;
+		goto out;
 
 	if (buf)
-		memcpy(buf, data_buf, mtd->writesize);
-	if (oob_buf)
-		memcpy(oob_buf, data_oob_buf, mtd->oobsize);
+		memcpy(buf, mxic->data_buf, mtd->writesize);
 
-out_unmap_oob:
 	if (oob_buf)
-		dma_free_coherent(mxic->uefc->dev, mtd->oobsize, data_oob_buf, dma_addr_oob);
-out_unmap_buf:
-	if (buf)
-		dma_free_coherent(mxic->uefc->dev, mtd->writesize, data_buf, dma_addr);
-out_free_desc:
-	dma_free_coherent(mxic->uefc->dev, desc_size, adma2_table, desc_table_dma_addr);
-	if (io_on)
-		uefc_set_io_mode(mxic->uefc, false);
-	if (locked)
-		mutex_unlock(&mxic->uefc->tfr_lock);
+		memcpy(oob_buf, mxic->oob_buf, mtd->oobsize);
+
+out:
+	uefc_set_io_mode(mxic->uefc, false);
+out_unlock:
+	mutex_unlock(&mxic->uefc->tfr_lock);
+
 	return ret;
 }
 
 static int uefc_nand_page_write(struct mtd_info *mtd, struct nand_chip *chip,
 				const u8 *buf, void *oob_buf, int oob_len, int page)
 {
-	dma_addr_t dma_addr = 0, dma_addr_oob = 0, desc_table_dma_addr = 0;
 	struct uefc_nand *mxic = nand_get_controller_data(chip);
-	size_t desc_size = 2 * sizeof(u64);
-	void *data_buf = NULL, *data_oob_buf = NULL;
 	u8 cmd = NAND_CMD_SEQIN;
-	u64 *adma2_table;
 	u8 addrs[5] = {0};
 	int i = 0;
-	bool locked = false;
-	bool io_on = false;
 	int ret;
 
 	if (!buf && !oob_buf)
 		return 0;
 
-	mutex_lock(&mxic->uefc->tfr_lock);
-	locked = true;
-	uefc_update_register(mxic->uefc, HC_CTRL,
-			     HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
-			     mxic->chan->id == CHANNEL_A ?
-			     HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
-	uefc_write_register(mxic->uefc, INT_STS, INT_STS_DMA_TFR_CMPLT | INT_STS_DMA_INT);
-	uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_wr_cfg());
-	uefc_set_io_mode(mxic->uefc, true);
-	io_on = true;
+	if (buf) {
+		memcpy(mxic->data_buf, buf, mtd->writesize);
+		mxic->adma_desc[i++] = ADMA2_DESC(mxic->data_buf_dma, mtd->writesize);
+	}
 
-	ret = uefc_nfc_data_xfer(mxic, &cmd, NULL, 1);
-	if (ret)
-		goto out;
+	if (oob_buf) {
+		memcpy(mxic->oob_buf, oob_buf, mtd->oobsize);
+		mxic->adma_desc[i++] = ADMA2_DESC(mxic->oob_buf_dma, mtd->oobsize);
+	}
+
+	mxic->adma_desc[i - 1] |= ADMA2_DESC_ATTR_END;
 
 	addrs[2] = page;
 	addrs[3] = page >> 8;
@@ -1026,69 +1036,54 @@ static int uefc_nand_page_write(struct mtd_info *mtd, struct nand_chip *chip,
 	if (chip->options & NAND_ROW_ADDR_3)
 		addrs[4] = page >> 16;
 
-	ret = uefc_nfc_data_xfer(mxic, addrs, NULL, 5);
+	mutex_lock(&mxic->uefc->tfr_lock);
+
+	ret = uefc_update_register(mxic->uefc, HC_CTRL,
+				   HC_CTRL_CH_SEL | HC_CTRL_DATA_ORDER,
+				   mxic->chan->id == CHANNEL_A ?
+				   HC_CTRL_CH_SEL_A : HC_CTRL_CH_SEL_B);
+	if (ret)
+		goto out_unlock;
+
+	ret = uefc_write_register(mxic->uefc, TFR_MODE, uefc_onfi_prep_wr_cfg());
+	if (ret)
+		goto out_unlock;
+
+	ret = uefc_set_io_mode(mxic->uefc, true);
+	if (ret)
+		goto out_unlock;
+
+	ret = uefc_onfi_data_xfer(mxic, &cmd, NULL, 1);
 	if (ret)
 		goto out;
 
-	adma2_table = dma_alloc_coherent(mxic->uefc->dev, desc_size,
-					 &desc_table_dma_addr, GFP_KERNEL);
-	if (!adma2_table) {
-		ret = -ENOMEM;
+	ret = uefc_onfi_data_xfer(mxic, addrs, NULL, sizeof(addrs));
+	if (ret)
 		goto out;
-	}
 
-	if (buf) {
-		data_buf = dma_alloc_coherent(mxic->uefc->dev, mtd->writesize,
-					      &dma_addr, GFP_KERNEL);
-		if (!data_buf) {
-			ret = -ENOMEM;
-			goto out;
-		}
-		memcpy(data_buf, buf, mtd->writesize);
-		adma2_table[i++] = ADMA2_DESC(dma_addr, mtd->writesize);
-	}
-
-	if (oob_buf) {
-		data_oob_buf = dma_alloc_coherent(mxic->uefc->dev, mtd->oobsize,
-						  &dma_addr_oob, GFP_KERNEL);
-		if (!data_oob_buf) {
-			ret = -ENOMEM;
-			goto out;
-		}
-		memcpy(data_oob_buf, oob_buf, mtd->oobsize);
-		adma2_table[i++] = ADMA2_DESC(dma_addr_oob, mtd->oobsize);
-	}
-
-	if (i > 0)
-		adma2_table[i - 1] |= ADMA2_DESC_ATTR_END;
-
-	uefc_write_register(mxic->uefc, ADMA2_ADDR, lower_32_bits(desc_table_dma_addr));
+	ret = uefc_write_register(mxic->uefc, ADMA2_ADDR,
+				  lower_32_bits(mxic->adma_desc_dma));
+	if (ret)
+		goto out;
 
 	ret = uefc_nand_wait_dma_done(mxic);
 	if (ret)
 		goto out;
 
+	/*
+	 * The page program is committed outside the transfer lock:
+	 * nand_prog_page_end_op() goes back through exec_op(), which takes the
+	 * lock itself.
+	 */
 	uefc_set_io_mode(mxic->uefc, false);
-	io_on = false;
 	mutex_unlock(&mxic->uefc->tfr_lock);
-	locked = false;
 
-	ret = nand_prog_page_end_op(chip);
+	return nand_prog_page_end_op(chip);
 
 out:
-	if (io_on)
-		uefc_set_io_mode(mxic->uefc, false);
-	if (locked)
-		mutex_unlock(&mxic->uefc->tfr_lock);
-
-	if (dma_addr_oob)
-		dma_free_coherent(mxic->uefc->dev, mtd->oobsize, data_oob_buf, dma_addr_oob);
-
-	if (dma_addr)
-		dma_free_coherent(mxic->uefc->dev, mtd->writesize, data_buf, dma_addr);
-
-	if (desc_table_dma_addr)
-		dma_free_coherent(mxic->uefc->dev, desc_size, adma2_table, desc_table_dma_addr);
+	uefc_set_io_mode(mxic->uefc, false);
+out_unlock:
+	mutex_unlock(&mxic->uefc->tfr_lock);
 
 	return ret;
 }
@@ -1096,8 +1091,8 @@ out:
 static int uefc_nand_read_page_raw(struct nand_chip *chip, u8 *buf,
 				   int oob_required, int page)
 {
-	struct mtd_info *mtd = nand_to_mtd(chip);
 	void *oob_buf = oob_required ? chip->oob_poi : NULL;
+	struct mtd_info *mtd = nand_to_mtd(chip);
 
 	return uefc_nand_page_read(mtd, chip, buf, oob_buf, mtd->oobsize, page);
 }
@@ -1113,8 +1108,8 @@ static int uefc_nand_read_oob(struct nand_chip *chip, int page)
 static int uefc_nand_write_page_raw(struct nand_chip *chip, const uint8_t *buf,
 				   int oob_required, int page)
 {
-	struct mtd_info *mtd = nand_to_mtd(chip);
 	void *oob_buf = oob_required ? chip->oob_poi : NULL;
+	struct mtd_info *mtd = nand_to_mtd(chip);
 
 	return uefc_nand_page_write(mtd, chip, buf, oob_buf, mtd->oobsize, page);
 }
@@ -1127,27 +1122,55 @@ static int uefc_nand_write_oob(struct nand_chip *chip, int page)
 				   mtd->oobsize, page);
 }
 
-static int uefc_nand_setup_interface(struct nand_chip *chip, int chipnr,
-				     const struct nand_interface_config *conf)
-{
-	const struct nand_sdr_timings *sdr;
-
-	/*
-	 * Only SDR timings are validated here; the controller currently runs
-	 * the interface at a fixed, conservative clock configured in probe(),
-	 * so no per-mode timing registers are programmed.
-	 */
-	sdr = nand_get_sdr_timings(conf);
-	if (IS_ERR(sdr))
-		return PTR_ERR(sdr);
-
-	return 0;
-}
-
 static const struct nand_controller_ops uefc_nand_controller_ops = {
 	.exec_op = uefc_onfi_exec_op,
-	.setup_interface = uefc_nand_setup_interface,
 };
+
+/*
+ * Allocate the DMA buffers reused by every page transfer. Must run after
+ * nand_scan(), which is what establishes the page and OOB sizes.
+ */
+static int uefc_nand_alloc_dma_buffers(struct uefc_nand *nand)
+{
+	struct mtd_info *mtd = nand_to_mtd(&nand->chip);
+	struct device *dev = nand->uefc->dev;
+
+	nand->adma_desc = dma_alloc_coherent(dev, UEFC_NAND_ADMA_TABLE_SIZE,
+					     &nand->adma_desc_dma, GFP_KERNEL);
+	if (!nand->adma_desc)
+		return -ENOMEM;
+
+	nand->data_buf = dma_alloc_coherent(dev, mtd->writesize,
+					    &nand->data_buf_dma, GFP_KERNEL);
+	if (!nand->data_buf)
+		goto err_free_desc;
+
+	nand->oob_buf = dma_alloc_coherent(dev, mtd->oobsize,
+					   &nand->oob_buf_dma, GFP_KERNEL);
+	if (!nand->oob_buf)
+		goto err_free_data;
+
+	return 0;
+
+err_free_data:
+	dma_free_coherent(dev, mtd->writesize, nand->data_buf, nand->data_buf_dma);
+err_free_desc:
+	dma_free_coherent(dev, UEFC_NAND_ADMA_TABLE_SIZE, nand->adma_desc,
+			  nand->adma_desc_dma);
+
+	return -ENOMEM;
+}
+
+static void uefc_nand_free_dma_buffers(struct uefc_nand *nand)
+{
+	struct mtd_info *mtd = nand_to_mtd(&nand->chip);
+	struct device *dev = nand->uefc->dev;
+
+	dma_free_coherent(dev, mtd->oobsize, nand->oob_buf, nand->oob_buf_dma);
+	dma_free_coherent(dev, mtd->writesize, nand->data_buf, nand->data_buf_dma);
+	dma_free_coherent(dev, UEFC_NAND_ADMA_TABLE_SIZE, nand->adma_desc,
+			  nand->adma_desc_dma);
+}
 
 static int uefc_nand_probe(struct platform_device *pdev)
 {
@@ -1211,13 +1234,22 @@ static int uefc_nand_probe(struct platform_device *pdev)
 	if (ret)
 		goto fail;
 
+	ret = uefc_nand_alloc_dma_buffers(nand);
+	if (ret)
+		goto fail_cleanup;
+
 	ret = mtd_device_register(mtd, NULL, 0);
 	if (ret)
-		goto fail;
+		goto fail_free_dma;
 
 	dev_set_drvdata(dev, nand);
 
 	return 0;
+
+fail_free_dma:
+	uefc_nand_free_dma_buffers(nand);
+fail_cleanup:
+	nand_cleanup(nand_chip);
 fail:
 	uefc_release_channel(nand->uefc, nand->chan);
 	return ret;
@@ -1230,6 +1262,7 @@ static void uefc_nand_remove(struct platform_device *pdev)
 
 	nand = dev_get_drvdata(dev);
 
+	uefc_nand_free_dma_buffers(nand);
 	uefc_release_channel(nand->uefc, nand->chan);
 }
 
