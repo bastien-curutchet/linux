@@ -1141,6 +1141,21 @@ config MMC_LOONGSON2
 
 	  If unsure, say N.
 
+config MMC_UEFC
+	tristate "Macronix UEFC eMMC Host Controller support"
+	depends on MFD_MACRONIX_UEFC || COMPILE_TEST
+	depends on OF
+	help
+	  This selects support for the eMMC Host Controller found in the
+	  Macronix Unified Extensible Flash Controller (UEFC). The controller
+	  core is handled by the UEFC MFD driver; this driver attaches to one
+	  of its channels to drive an eMMC device.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called uefc-mmc.
+
+	  If unsure, say N.
+
 config MMC_SDHCI_EXTERNAL_DMA
 	bool
 
