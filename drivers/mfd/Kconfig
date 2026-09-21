@@ -2578,5 +2578,20 @@ config MFD_MAX7360
 	  additional drivers must be enabled in order to use the functionality
 	  of the device.
 
+config MFD_MACRONIX_UEFC
+	tristate "Support for the Macronix UEFC"
+	select MFD_CORE
+	select REGMAP
+	help
+	  Select this option to enable support for the Macronix Universal
+	  Embedded Flash Controller (UEFC), which drives several kinds of
+	  memory bus and protocol through two channels. This is the core
+	  part of the driver: it owns the register map, the clocks and the
+	  channels that the protocol children share, and instantiates each
+	  child from the protocol its channel was synthesised for.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called uefc-common.
+
 endmenu
 endif

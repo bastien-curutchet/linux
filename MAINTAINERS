@@ -15672,6 +15672,19 @@ F:	drivers/net/wireless/virtual/mac80211_hwsim*.[ch]
 F:	include/net/mac80211.h
 F:	net/mac80211/
 
+MACRONIX UEFC CONTROLLER
+M:	Cheng Ming Lin <chengminglin@mxic.com.tw>
+S:	Maintained
+F:	Documentation/devicetree/bindings/mfd/mxic,uefc.yaml
+F:	Documentation/devicetree/bindings/mmc/mxic,uefc-mmc.yaml
+F:	Documentation/devicetree/bindings/mtd/mxic,uefc-nand.yaml
+F:	Documentation/devicetree/bindings/spi/mxic,uefc-xspi.yaml
+F:	drivers/mfd/uefc-common.c
+F:	drivers/mmc/host/uefc-mmc.c
+F:	drivers/mtd/nand/raw/uefc-nand.c
+F:	drivers/spi/spi-uefc.c
+F:	include/linux/mfd/uefc-common.h
+
 MAILBOX API
 M:	Jassi Brar <jassisinghbrar@gmail.com>
 L:	linux-kernel@vger.kernel.org

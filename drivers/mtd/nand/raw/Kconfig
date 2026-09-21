@@ -116,6 +116,19 @@ config MTD_NAND_ATMEL
 	  Enables support for NAND Flash / Smart Media Card interface
 	  on Atmel AT91 processors.
 
+config MTD_NAND_UEFC
+	tristate "Macronix UEFC NAND controller"
+	depends on (MFD_MACRONIX_UEFC || COMPILE_TEST) && OF
+	depends on HAS_IOMEM
+	help
+	  Enable support for the raw NAND channels of the Macronix Universal
+	  Embedded Flash Controller (UEFC). This driver is a child of the
+	  UEFC MFD core and drives parallel ONFI devices attached to a
+	  channel synthesised for that protocol.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called uefc-nand.
+
 config MTD_NAND_ORION
 	tristate "Marvell Orion NAND controller"
 	depends on PLAT_ORION
